@@ -1,0 +1,82 @@
+Name = ctrl-keys;
+Version = 0.1;
+Author = "Christopher Chin";
+KLL = 0.3;
+
+# Modified Date
+Date = 2015-April-05;
+
+# Creates a layer that sends the ctrl'd version of every key.
+# This allows for hotkeys in the ctrl hotkeys
+U"Esc" : U"Esc" + U"Ctrl";
+U"1" : U"1" + U"Ctrl";
+U"2" : U"2" + U"Ctrl";
+U"3" : U"3" + U"Ctrl";
+U"4" : U"4" + U"Ctrl";
+U"5" : U"5" + U"Ctrl";
+U"6" : U"6" + U"Ctrl";
+U"7" : U"7" + U"Ctrl";
+U"8" : U"8" + U"Ctrl";
+U"9" : U"9" + U"Ctrl";
+U"0" : U"0" + U"Ctrl";
+U"Minus" : U"Minus" + U"Ctrl";
+U"Equal" : U"Equal" + U"Ctrl";
+U"Backslash" : U"Backslash" + U"Ctrl";
+U"Backtick" : U"Backtick" + U"Ctrl";
+U"Tab" : U"Tab" + U"Ctrl";
+U"Q" : U"Q" + U"Ctrl";
+U"W" : U"W" + U"Ctrl";
+U"E" : U"End";
+U"R" : U"R" + U"Ctrl";
+U"T" : U"T" + U"Ctrl";
+U"Y" : U"Y" + U"Ctrl";
+U"U" : U"U" + U"Ctrl";
+U"I" : U"I" + U"Ctrl";
+U"O" : U"O" + U"Ctrl";
+U"P" : U"P" + U"Ctrl";
+U"LBrace" : U"LBrace" + U"Ctrl";
+U"RBrace" : U"RBrace" + U"Ctrl";
+U"Backspace" : U"Backspace" + U"Ctrl";
+U"A" : U"Home";
+U"S" : U"S" + U"Ctrl";
+U"D" : U"D" + U"Ctrl";
+U"F" : U"F" + U"Ctrl";
+U"G" : U"G" + U"Ctrl";
+U"H" : U"Backspace";
+U"J" : U"J" + U"Ctrl";
+U"K" : U"K" + U"Ctrl";
+U"L" : U"L" + U"Ctrl";
+U"Semicolon" : U"Semicolon" + U"Ctrl";
+U"Quote" : U"Quote" + U"Ctrl";
+U"Enter" : U"Enter" + U"Ctrl";
+U"Z" : U"Z" + U"Ctrl";
+U"X" : U"X" + U"Ctrl";
+U"C" : U"C" + U"Ctrl";
+U"V" : U"V" + U"Ctrl";
+U"B" : U"B" + U"Ctrl";
+U"N" : U"N" + U"Ctrl";
+U"M" : U"M" + U"Ctrl";
+U"Comma" : U"Comma" + U"Ctrl";
+U"Period" : U"Period" + U"Ctrl";
+U"Slash" : U"Slash" + U"Ctrl";
+U"RShift" : U"RShift" + U"Ctrl";
+U"LAlt" : U"LAlt" + U"Ctrl";
+U"LGui" : U"LGui" + U"Ctrl";
+U"Space" : U"Space" + U"Ctrl";
+U"RGui" : U"RGui" + U"Ctrl";
+U"RAlt" : U"RAlt" + U"Ctrl";
+
+U"F1" : U"F1" + U"Ctrl";
+U"F2" : U"F2" + U"Ctrl";
+U"F3" : U"F3" + U"Ctrl";
+U"F4" : U"F4" + U"Ctrl";
+U"F5" : U"F5" + U"Ctrl";
+U"F6" : U"F6" + U"Ctrl";
+U"F7" : U"F7" + U"Ctrl";
+U"F8" : U"F8" + U"Ctrl";
+U"F9" : U"F9" + U"Ctrl";
+U"F10" : U"F10" + U"Ctrl";
+U"F11" : U"F11" + U"Ctrl";
+U"F12" : U"F12" + U"Ctrl";
+
+#S0x2A : U"LShift" + U"Ctrl";

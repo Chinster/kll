@@ -1,0 +1,15 @@
+Name = mod-layers;
+Version = 0.1;
+Author = "Christopher Chin";
+KLL = 0.3;
+
+Date = 2015-April-05;
+
+U"LShift" : layerShift(3);
+U"Ctrl" : layerShift(4);
+
+U"Backspace" : U"Backslash";
+U"Backslash" : U"Backspace";
+# The key to the right of the spacebar is now super
+U"Function2" : U"Ctrl";
+U"RGui" : U"Ctrl";

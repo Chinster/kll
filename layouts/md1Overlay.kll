@@ -1,12 +1,23 @@
 Name = md1Overlay;
 Version = 0.1;
-Author = "HaaTa (Jacob Alexander) 2014";
+Author = "Christopher Chin";
 KLL = 0.3;
 
 # Modified Date
-Date = 2014-11-12;
+Date = 2015-April-04;
 
-U"Function2" : layerLock( 1 );
-U"Function3" : layerLatch( 1 );
-U"Function4" : U"CapsLock";
+# Just examples.
+#U"Function2" : layerShift( 1 );
+#U"Function2" : layerLock( 1 );
+#U"Function3" : layerLatch( 1 );
+#U"Function4" : U"CapsLock";
 
+# Changes from default built-in layers to my personal layers.
+U"Function1" : layerLock( 1 );
+U"Function2" : U"Ctrl";
+
+# Allow F keys, should be a layerLatch but this was not working.
+U"Function3" : layerShift( 2 );
+
+# Broken Key
+# U"Function4"

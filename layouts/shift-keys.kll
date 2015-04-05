@@ -1,0 +1,83 @@
+Name = shift-keys;
+Version = 0.1;
+Author = "Christopher Chin";
+KLL = 0.3;
+
+# Modified Date
+Date = 2015-April-05;
+
+# Creates a layer that sends the shifted version of every key.
+# This allows for hotkeys in the shift layer.
+U"Esc" : U"Backtick" + U"LShift";
+U"1" : U"1" + U"LShift";
+U"2" : U"2" + U"LShift";
+U"3" : U"3" + U"LShift";
+U"4" : U"4" + U"LShift";
+U"5" : U"5" + U"LShift";
+U"6" : U"6" + U"LShift";
+U"7" : U"7" + U"LShift";
+U"8" : U"8" + U"LShift";
+U"9" : U"9" + U"LShift";
+U"0" : U"0" + U"LShift";
+U"Minus" : U"Minus" + U"LShift";
+U"Equal" : U"Equal" + U"LShift";
+U"Backslash" : U"Backslash" + U"LShift";
+U"Backtick" : U"Backtick" + U"LShift";
+U"Tab" : U"Tab" + U"LShift";
+U"Q" : U"Q" + U"LShift";
+U"W" : U"W" + U"LShift";
+U"E" : U"E" + U"LShift";
+U"R" : U"R" + U"LShift";
+U"T" : U"T" + U"LShift";
+U"Y" : U"Y" + U"LShift";
+U"U" : U"U" + U"LShift";
+U"I" : U"I" + U"LShift";
+U"O" : U"O" + U"LShift";
+U"P" : U"P" + U"LShift";
+U"LBrace" : U"LBrace" + U"LShift";
+U"RBrace" : U"RBrace" + U"LShift";
+U"Backspace" : U"Backspace" + U"LShift";
+U"A" : U"A" + U"LShift";
+U"S" : U"S" + U"LShift";
+U"D" : U"D" + U"LShift";
+U"F" : U"F" + U"LShift";
+U"G" : U"G" + U"LShift";
+U"H" : U"H" + U"LShift";
+U"J" : U"J" + U"LShift";
+U"K" : U"K" + U"LShift";
+U"L" : U"L" + U"LShift";
+U"Semicolon" : U"Semicolon" + U"LShift";
+U"Quote" : U"Quote" + U"LShift";
+U"Enter" : U"Enter" + U"LShift";
+U"Z" : U"Z" + U"LShift";
+U"X" : U"X" + U"LShift";
+U"C" : U"C" + U"LShift";
+U"V" : U"V" + U"LShift";
+U"B" : U"B" + U"LShift";
+U"N" : U"N" + U"LShift";
+U"M" : U"M" + U"LShift";
+U"Comma" : U"Comma" + U"LShift";
+U"Period" : U"Period" + U"LShift";
+U"Slash" : U"Slash" + U"LShift";
+U"RShift" : U"RShift" + U"LShift";
+U"LAlt" : U"LAlt" + U"LShift";
+U"LGui" : U"LGui" + U"LShift";
+U"Space" : U"Space" + U"LShift";
+U"RGui" : U"RGui" + U"LShift";
+U"RAlt" : U"RAlt" + U"LShift";
+
+U"F1" : U"F1" + U"Shift";
+U"F2" : U"F2" + U"Shift";
+U"F3" : U"F3" + U"Shift";
+U"F4" : U"F4" + U"Shift";
+U"F5" : U"F5" + U"Shift";
+U"F6" : U"F6" + U"Shift";
+U"F7" : U"F7" + U"Shift";
+U"F8" : U"F8" + U"Shift";
+U"F9" : U"F9" + U"Shift";
+U"F10" : U"F10" + U"Shift";
+U"F11" : U"F11" + U"Shift";
+U"F12" : U"F12" + U"Shift";
+
+# Drop the other layer, this will drop hotkeys, but allow ctrl+shift comboes.
+#U"Ctrl" : U"Ctrl" + U"LShift";
