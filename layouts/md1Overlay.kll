@@ -6,18 +6,24 @@ KLL = 0.3;
 # Modified Date
 Date = 2015-April-04;
 
+
+# Normal keyboard ctrl location
+S0x37 : U"Ctrl";
+
+# Layer button are combos.
+S0x3B : U"Function2";
+U"Function1", U"Function2": layerLock( 1 );
+U"Function1", U"Function3": layerLock( 2 );
+
+# Usable whenever timing gets implemented
+#U"Space"(300ms) : U"Space";
+#U"Space"(H:301ms) : U"Ctrl";
+
+# Broken Key
+U"Function4" : U"F";
+
 # Just examples.
 #U"Function2" : layerShift( 1 );
 #U"Function2" : layerLock( 1 );
 #U"Function3" : layerLatch( 1 );
 #U"Function4" : U"CapsLock";
-
-# Changes from default built-in layers to my personal layers.
-U"Function1" : layerLock( 1 );
-U"Function2" : U"Ctrl";
-
-# Allow F keys, should be a layerLatch but this was not working.
-U"Function3" : layerShift( 2 );
-
-# Broken Key
-# U"Function4"

@@ -1,0 +1,17 @@
+Name = xtra-keys;
+Version = 0.1;
+Author = "Christopher Chin";
+KLL = 0.3;
+
+Date = 2015-August-20;
+
+# Easier return to default layer.
+U"Function1": layerLock( 1 );
+
+# WASD directionals
+U"W": U"Up";
+U"A": U"Left";
+U"S": U"Down";
+U"D": U"Right";
+
+U"Backspace": U"Delete";
