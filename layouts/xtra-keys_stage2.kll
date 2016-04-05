@@ -1,0 +1,30 @@
+Name = normal-mouse;
+Version = 0.1;
+Author = "Christopher Chin";
+KLL = 0.3;
+
+Date = 2016-April-05;
+
+# Layer 2
+# Remove this layer and base layer when pressing function key
+# I tried using the :+ operator. It did not work well.
+U"Function1" : layerLock( 2 ) + layerLock( 1 );
+
+# Return to original layer
+U"Esc" : layerLock( 2 );
+
+# Move to faster layer and F9 - F12, remove this stage
+U"5" : layerLock( 3 ) + layerLock( 2 );
+
+
+# WASD Mouse movements
+U"W" : mouseOut( 0, 0, -3 );
+U"S" : mouseOut( 0, 0, 3 );
+U"A" : mouseOut( 0, -3, 0 );
+U"D" : mouseOut( 0, 3, 0 );
+
+# F keys
+U"1" : U"F5";
+U"2" : U"F6";
+U"3" : U"F7";
+U"4" : U"F8";

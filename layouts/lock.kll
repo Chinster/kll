@@ -5,7 +5,8 @@ KLL = 0.3;
 
 Date = 2015-August-31;
 
-U"Function1" : layerLock( 2 );
+# Place lock on layer 7 so it is removeable
+U"Function1" : layerLock( 7 );
 
 # Disable all the other keys
 S0x00 : U"Ctrl";
