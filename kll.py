@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# KLL Compiler
-# Keyboard Layout Langauge
-#
-# Copyright (C) 2014-2015 by Jacob Alexander
+'''
+KLL Compiler
+Keyboard Layout Langauge
+'''
+
+# Copyright (C) 2014-2016 by Jacob Alexander
 #
 # This file is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,33 +22,28 @@
 ### Imports ###
 
 import argparse
-import io
-import os
-import re
-import sys
-import token
 import importlib
+import os
+import sys
 
-from tokenize import generate_tokens
 from re       import VERBOSE
-from pprint   import pformat
 
-from kll_lib.hid_dict   import *
 from kll_lib.containers import *
+from kll_lib.hid_dict   import *
 
 from funcparserlib.lexer  import make_tokenizer, Token, LexerError
-from funcparserlib.parser import (some, a, many, oneplus, skip, finished, maybe, skip, forward_decl, NoParseError)
+from funcparserlib.parser import (some, a, many, oneplus, finished, maybe, skip, NoParseError)
 
 
 
 ### Decorators ###
 
- ## Print Decorator Variables
+## Print Decorator Variables
 ERROR = '\033[5;1;31mERROR\033[0m:'
 
 
- ## Python Text Formatting Fixer...
- ##  Because the creators of Python are averse to proper capitalization.
+## Python Text Formatting Fixer...
+##  Because the creators of Python are averse to proper capitalization.
 textFormatter_lookup = {
 	"usage: "            : "Usage: ",
 	"optional arguments" : "Optional Arguments",
@@ -69,12 +66,12 @@ def checkFileExists( filename ):
 def processCommandLineArgs():
 	# Setup argument processor
 	pArgs = argparse.ArgumentParser(
-	        usage="%(prog)s [options] <file1>...",
-	        description="Generates .h file state tables and pointer indices from KLL .kll files.",
-	        epilog="Example: {0} mykeyboard.kll -d colemak.kll -p hhkbpro2.kll -p symbols.kll".format( os.path.basename( sys.argv[0] ) ),
-	        formatter_class=argparse.RawTextHelpFormatter,
-	        add_help=False,
-)
+		usage="%(prog)s [options] <file1>...",
+		description="Generates .h file state tables and pointer indices from KLL .kll files.",
+		epilog="Example: {0} mykeyboard.kll -d colemak.kll -p hhkbpro2.kll -p symbols.kll".format( os.path.basename( sys.argv[0] ) ),
+		formatter_class=argparse.RawTextHelpFormatter,
+		add_help=False,
+	)
 
 	# Positional Arguments
 	pArgs.add_argument( 'files', type=str, nargs='+',
@@ -138,17 +135,24 @@ def tokenize( string ):
 		( 'Space',            ( r'[ \t\r\n]+', ) ),
 		( 'USBCode',          ( r'U(("[^"]+")|(0x[0-9a-fA-F]+)|([0-9]+))', ) ),
 		( 'USBCodeStart',     ( r'U\[', ) ),
+		( 'ConsCode',         ( r'CONS(("[^"]+")|(0x[0-9a-fA-F]+)|([0-9]+))', ) ),
+		( 'ConsCodeStart',    ( r'CONS\[', ) ),
+		( 'SysCode',          ( r'SYS(("[^"]+")|(0x[0-9a-fA-F]+)|([0-9]+))', ) ),
+		( 'SysCodeStart',     ( r'SYS\[', ) ),
+		( 'LedCode',          ( r'LED(("[^"]+")|(0x[0-9a-fA-F]+)|([0-9]+))', ) ),
+		( 'LedCodeStart',     ( r'LED\[', ) ),
 		( 'ScanCode',         ( r'S((0x[0-9a-fA-F]+)|([0-9]+))', ) ),
 		( 'ScanCodeStart',    ( r'S\[', ) ),
 		( 'CodeEnd',          ( r'\]', ) ),
-		( 'String',           ( r'"[^"]*"', VERBOSE ) ),
+		( 'String',           ( r'"[^"]*"', ) ),
 		( 'SequenceString',   ( r"'[^']*'", ) ),
-		( 'Operator',         ( r'=>|:\+|:-|:|=', ) ),
+		( 'Operator',         ( r'=>|:\+|:-|::|:|=', ) ),
+		( 'Number',           ( r'(-[ \t]*)?((0x[0-9a-fA-F]+)|(0|([1-9][0-9]*)))', VERBOSE ) ),
 		( 'Comma',            ( r',', ) ),
 		( 'Dash',             ( r'-', ) ),
 		( 'Plus',             ( r'\+', ) ),
 		( 'Parenthesis',      ( r'\(|\)', ) ),
-		( 'Number',           ( r'-?(0x[0-9a-fA-F]+)|(0|([1-9][0-9]*))', VERBOSE ) ),
+		( 'None',             ( r'None', ) ),
 		( 'Name',             ( r'[A-Za-z_][A-Za-z_0-9]*', ) ),
 		( 'VariableContents', ( r'''[^"' ;:=>()]+''', ) ),
 		( 'EndOfLine',        ( r';', ) ),
@@ -164,42 +168,95 @@ def tokenize( string ):
 
 ### Parsing ###
 
- ## Map Arrays
+## Map Arrays
 macros_map        = Macros()
 variables_dict    = Variables()
 capabilities_dict = Capabilities()
 
 
- ## Parsing Functions
+## Parsing Functions
 
 def make_scanCode( token ):
 	scanCode = int( token[1:], 0 )
 	# Check size, to make sure it's valid
-	if scanCode > 0xFF:
-		print ( "{0} ScanCode value {1} is larger than 255".format( ERROR, scanCode ) )
-		raise
+	# XXX Add better check that takes symbolic names into account (i.e. U"Latch5")
+	#if scanCode > 0xFF:
+	#	print ( "{0} ScanCode value {1} is larger than 255".format( ERROR, scanCode ) )
+	#	raise
 	return scanCode
 
-def make_usbCode( token ):
+def make_hidCode( type, token ):
 	# If first character is a U, strip
 	if token[0] == "U":
 		token = token[1:]
+	# CONS specifier
+	elif 'CONS' in token:
+		token = token[4:]
+	# SYS specifier
+	elif 'SYS' in token:
+		token = token[3:]
 
 	# If using string representation of USB Code, do lookup, case-insensitive
 	if '"' in token:
 		try:
-			usbCode = kll_hid_lookup_dictionary[ token[1:-1].upper() ]
+			hidCode = kll_hid_lookup_dictionary[ type ][ token[1:-1].upper() ][1]
 		except LookupError as err:
-			print ( "{0} {1} is an invalid USB Code Lookup...".format( ERROR, err ) )
+			print ( "{0} {1} is an invalid USB HID Code Lookup...".format( ERROR, err ) )
 			raise
 	else:
-		usbCode = int( token, 0 )
+		# Already tokenized
+		if type == 'USBCode' and token[0] == 'USB' or type == 'SysCode' and token[0] == 'SYS' or type == 'ConsCode' and token[0] == 'CONS':
+			hidCode = token[1]
+		# Convert
+		else:
+			hidCode = int( token, 0 )
 
-	# Check size, to make sure it's valid
-	if usbCode > 0xFF:
-		print ( "{0} USBCode value {1} is larger than 255".format( ERROR, usbCode ) )
-		raise
-	return usbCode
+	# Check size if a USB Code, to make sure it's valid
+	# XXX Add better check that takes symbolic names into account (i.e. U"Latch5")
+	#if type == 'USBCode' and hidCode > 0xFF:
+	#	print ( "{0} USBCode value {1} is larger than 255".format( ERROR, hidCode ) )
+	#	raise
+
+	# Return a tuple, identifying which type it is
+	if type == 'USBCode':
+		return make_usbCode_number( hidCode )
+	elif type == 'ConsCode':
+		return make_consCode_number( hidCode )
+	elif type == 'SysCode':
+		return make_sysCode_number( hidCode )
+
+	print ( "{0} Unknown HID Specifier '{1}'".format( ERROR, type ) )
+	raise
+
+def make_usbCode( token ):
+	return make_hidCode( 'USBCode', token )
+
+def make_consCode( token ):
+	return make_hidCode( 'ConsCode', token )
+
+def make_sysCode( token ):
+	return make_hidCode( 'SysCode', token )
+
+def make_hidCode_number( type, token ):
+	lookup = {
+		'ConsCode' : 'CONS',
+		'SysCode'  : 'SYS',
+		'USBCode'  : 'USB',
+	}
+	return ( lookup[ type ], token )
+
+def make_usbCode_number( token ):
+	return make_hidCode_number( 'USBCode', token )
+
+def make_consCode_number( token ):
+	return make_hidCode_number( 'ConsCode', token )
+
+def make_sysCode_number( token ):
+	return make_hidCode_number( 'SysCode', token )
+
+ # Replace key-word with None specifier (which indicates a noneOut capability)
+def make_none( token ):
+	return [[[('NONE', 0)]]]
 
 def make_seqString( token ):
 	# Shifted Characters, and amount to move by to get non-shifted version
@@ -208,21 +265,21 @@ def make_seqString( token ):
 		( "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 0x20 ),
 		( "+",       0x12 ),
 		( "&(",      0x11 ),
-		( "!#$%<>",  0x10 ),
+		( "!#$%",    0x10 ),
 		( "*",       0x0E ),
 		( ")",       0x07 ),
 		( '"',       0x05 ),
 		( ":",       0x01 ),
-		( "^",      -0x10 ),
-		( "_",      -0x18 ),
-		( "{}|",    -0x1E ),
-		( "~",      -0x20 ),
-		( "@",      -0x32 ),
-		( "?",      -0x38 ),
+		( "@",      -0x0E ),
+		( "<>?",    -0x10 ),
+		( "~",      -0x1E ),
+		( "{}|",    -0x20 ),
+		( "^",      -0x28 ),
+		( "_",      -0x32 ),
 	)
 
 	listOfLists = []
-	shiftKey = kll_hid_lookup_dictionary["SHIFT"]
+	shiftKey = kll_hid_lookup_dictionary['USBCode']["SHIFT"]
 
 	# Creates a list of USB codes from the string: sequence (list) of combos (lists)
 	for char in token[1:-1]:
@@ -240,7 +297,7 @@ def make_seqString( token ):
 
 		# Do KLL HID Lookup on non-shifted character
 		# NOTE: Case-insensitive, which is why the shift must be pre-computed
-		usbCode = kll_hid_lookup_dictionary[ processedChar.upper() ]
+		usbCode = kll_hid_lookup_dictionary['USBCode'][ processedChar.upper() ]
 
 		# Create Combo for this character, add shift key if shifted
 		charCombo = []
@@ -262,7 +319,7 @@ def make_unseqString( token ):
 def make_number( token ):
 	return int( token, 0 )
 
-  # Range can go from high to low or low to high
+# Range can go from high to low or low to high
 def make_scanCode_range( rangeVals ):
 	start = rangeVals[0]
 	end   = rangeVals[1]
@@ -274,31 +331,44 @@ def make_scanCode_range( rangeVals ):
 	# Iterate from start to end, and generate the range
 	return list( range( start, end + 1 ) )
 
-  # Range can go from high to low or low to high
-  # Warn on 0-9 (as this does not do what one would expect) TODO
-  # Lookup USB HID tags and convert to a number
-def make_usbCode_range( rangeVals ):
+# Range can go from high to low or low to high
+# Warn on 0-9 for USBCodes (as this does not do what one would expect) TODO
+# Lookup USB HID tags and convert to a number
+def make_hidCode_range( type, rangeVals ):
 	# Check if already integers
 	if isinstance( rangeVals[0], int ):
 		start = rangeVals[0]
 	else:
-		start = make_usbCode( rangeVals[0] )
+		start = make_hidCode( type, rangeVals[0] )[1]
 
 	if isinstance( rangeVals[1], int ):
 		end = rangeVals[1]
 	else:
-		end = make_usbCode( rangeVals[1] )
+		end = make_hidCode( type, rangeVals[1] )[1]
 
 	# Swap start, end if start is greater than end
 	if start > end:
 		start, end = end, start
 
 	# Iterate from start to end, and generate the range
-	return list( range( start, end + 1 ) )
-	pass
+	listRange = list( range( start, end + 1 ) )
+
+	# Convert each item in the list to a tuple
+	for item in range( len( listRange ) ):
+		listRange[ item ] = make_hidCode_number( type, listRange[ item ] )
+	return listRange
+
+def make_usbCode_range( rangeVals ):
+	return make_hidCode_range( 'USBCode', rangeVals )
+
+def make_sysCode_range( rangeVals ):
+	return make_hidCode_range( 'SysCode', rangeVals )
+
+def make_consCode_range( rangeVals ):
+	return make_hidCode_range( 'ConsCode', rangeVals )
 
 
- ## Base Rules
+## Base Rules
 
 const       = lambda x: lambda _: x
 unarg       = lambda f: lambda x: f(*x)
@@ -316,7 +386,7 @@ def listElem( item ):
 def listToTuple( items ):
 	return tuple( items )
 
-  # Flatten only the top layer (list of lists of ...)
+# Flatten only the top layer (list of lists of ...)
 def oneLayerFlatten( items ):
 	mainList = []
 	for sublist in items:
@@ -325,14 +395,27 @@ def oneLayerFlatten( items ):
 
 	return mainList
 
-  # Capability arguments may need to be expanded (e.g. 1 16 bit argument needs to be 2 8 bit arguments for the state machine)
 def capArgExpander( items ):
+	'''
+	Capability arguments may need to be expanded
+	(e.g. 1 16 bit argument needs to be 2 8 bit arguments for the state machine)
+
+	If the number is negative, determine width of the final value, mask to max, subtract,
+	then convert to multiple bytes
+	'''
 	newArgs = []
 	# For each defined argument in the capability definition
 	for arg in range( 0, len( capabilities_dict[ items[0] ][1] ) ):
 		argLen = capabilities_dict[ items[0] ][1][ arg ][1]
 		num = items[1][ arg ]
-		byteForm = num.to_bytes( argLen, byteorder='little' ) # XXX Yes, little endian from how the uC structs work
+
+		# Set last bit if value is negative
+		if num < 0:
+			max_val = 2 ** (argLen * 8)
+			num += max_val
+
+		# XXX Yes, little endian from how the uC structs work
+		byteForm = num.to_bytes( argLen, byteorder='little' )
 
 		# For each sub-argument, split into byte-sized chunks
 		for byte in range( 0, argLen ):
@@ -340,8 +423,8 @@ def capArgExpander( items ):
 
 	return tuple( [ items[0], tuple( newArgs ) ] )
 
-  # Expand ranges of values in the 3rd dimension of the list, to a list of 2nd lists
-  # i.e. [ sequence, [ combo, [ range ] ] ] --> [ [ sequence, [ combo ] ], <option 2>, <option 3> ]
+# Expand ranges of values in the 3rd dimension of the list, to a list of 2nd lists
+# i.e. [ sequence, [ combo, [ range ] ] ] --> [ [ sequence, [ combo ] ], <option 2>, <option 3> ]
 def optionExpansion( sequences ):
 	expandedSequences = []
 
@@ -387,21 +470,36 @@ def optionExpansion( sequences ):
 
 
 # Converts USB Codes into Capabilities
-def usbCodeToCapability( items ):
+# These are tuples (<type>, <integer>)
+def hidCodeToCapability( items ):
 	# Items already converted to variants using optionExpansion
 	for variant in range( 0, len( items ) ):
 		# Sequence of Combos
 		for sequence in range( 0, len( items[ variant ] ) ):
 			for combo in range( 0, len( items[ variant ][ sequence ] ) ):
-				# Only convert if an integer, otherwise USB Code doesn't need converting
-				if isinstance( items[ variant ][ sequence ][ combo ], int ):
-					# Use backend capability name and a single argument
-					items[ variant ][ sequence ][ combo ] = tuple( [ backend.usbCodeCapability(), tuple( [ hid_lookup_dictionary[ items[ variant ][ sequence ][ combo ] ] ] ) ] )
-
+				if items[ variant ][ sequence ][ combo ][0] in backend.requiredCapabilities.keys():
+					try:
+						# Use backend capability name and a single argument
+						items[ variant ][ sequence ][ combo ] = tuple(
+							[ backend.capabilityLookup( items[ variant ][ sequence ][ combo ][0] ),
+							tuple( [ hid_lookup_dictionary[ items[ variant ][ sequence ][ combo ] ] ] ) ]
+						)
+					except KeyError:
+						print ( "{0} {1} is an invalid HID lookup value".format( ERROR, items[ variant ][ sequence ][ combo ] ) )
+						sys.exit( 1 )
 	return items
 
 
- ## Evaluation Rules
+# Convert tuple of tuples to list of lists
+def listit( t ):
+	return list( map( listit, t ) ) if isinstance( t, ( list, tuple ) ) else t
+
+# Convert list of lists to tuple of tuples
+def tupleit( t ):
+	return tuple( map( tupleit, t ) ) if isinstance( t, ( tuple, list ) ) else t
+
+
+## Evaluation Rules
 
 def eval_scanCode( triggers, operator, results ):
 	# Convert to lists of lists of lists to tuples of tuples of tuples
@@ -409,8 +507,26 @@ def eval_scanCode( triggers, operator, results ):
 	triggers = tuple( tuple( tuple( sequence ) for sequence in variant ) for variant in triggers )
 	results  = tuple( tuple( tuple( sequence ) for sequence in variant ) for variant in results )
 
+	# Lookup interconnect id (Current file scope)
+	# Default to 0 if not specified
+	if 'ConnectId' not in variables_dict.overallVariables.keys():
+		id_num = 0
+	else:
+		id_num = int( variables_dict.overallVariables['ConnectId'] )
+
 	# Iterate over all combinations of triggers and results
-	for trigger in triggers:
+	for sequence in triggers:
+		# Convert tuple of tuples to list of lists so each element can be modified
+		trigger = listit( sequence )
+
+		# Create ScanCode entries for trigger
+		for seq_index, combo in enumerate( sequence ):
+			for com_index, scancode in enumerate( combo ):
+				trigger[ seq_index ][ com_index ] = macros_map.scanCodeStore.append( ScanCode( scancode, id_num ) )
+
+		# Convert back to a tuple of tuples
+		trigger = tupleit( trigger )
+
 		for result in results:
 			# Append Case
 			if operator == ":+":
@@ -421,7 +537,8 @@ def eval_scanCode( triggers, operator, results ):
 				macros_map.removeScanCode( trigger, result )
 
 			# Replace Case
-			elif operator == ":":
+			# Soft Replace Case is the same for Scan Codes
+			elif operator == ":" or operator == "::":
 				macros_map.replaceScanCode( trigger, result )
 
 def eval_usbCode( triggers, operator, results ):
@@ -435,6 +552,10 @@ def eval_usbCode( triggers, operator, results ):
 		scanCodes = macros_map.lookupUSBCodes( trigger )
 		for scanCode in scanCodes:
 			for result in results:
+				# Soft Replace needs additional checking to see if replacement is necessary
+				if operator == "::" and not macros_map.softReplaceCheck( scanCode ):
+					continue
+
 				# Cache assignment until file finishes processing
 				macros_map.cacheAssignment( operator, scanCode, result )
 
@@ -460,10 +581,13 @@ set_capability = unarg( eval_capability )
 set_define     = unarg( eval_define )
 
 
- ## Sub Rules
+## Sub Rules
 
 usbCode     = tokenType('USBCode') >> make_usbCode
 scanCode    = tokenType('ScanCode') >> make_scanCode
+consCode    = tokenType('ConsCode') >> make_consCode
+sysCode     = tokenType('SysCode') >> make_sysCode
+none        = tokenType('None') >> make_none
 name        = tokenType('Name')
 number      = tokenType('Number') >> make_number
 comma       = tokenType('Comma')
@@ -475,10 +599,10 @@ unString    = tokenType('String') # When the double quotes are still needed for 
 seqString   = tokenType('SequenceString') >> make_seqString
 unseqString = tokenType('SequenceString') >> make_unseqString # For use with variables
 
-  # Code variants
+# Code variants
 code_end = tokenType('CodeEnd')
 
-  # Scan Codes
+# Scan Codes
 scanCode_start     = tokenType('ScanCodeStart')
 scanCode_range     = number + skip( dash ) + number >> make_scanCode_range
 scanCode_listElem  = number >> listElem
@@ -488,30 +612,54 @@ scanCode_elem      = scanCode >> listElem
 scanCode_combo     = oneplus( ( scanCode_expanded | scanCode_elem ) + skip( maybe( plus ) ) )
 scanCode_sequence  = oneplus( scanCode_combo + skip( maybe( comma ) ) )
 
-  # USB Codes
+# USB Codes
 usbCode_start       = tokenType('USBCodeStart')
-usbCode_range       = ( number | unString ) + skip( dash ) + ( number | unString ) >> make_usbCode_range
+usbCode_number      = number >> make_usbCode_number
+usbCode_range       = ( usbCode_number | unString ) + skip( dash ) + ( number | unString ) >> make_usbCode_range
 usbCode_listElemTag = unString >> make_usbCode
-usbCode_listElem    = ( number | usbCode_listElemTag ) >> listElem
+usbCode_listElem    = ( usbCode_number | usbCode_listElemTag ) >> listElem
 usbCode_innerList   = oneplus( ( usbCode_range | usbCode_listElem ) + skip( maybe( comma ) ) ) >> flatten
 usbCode_expanded    = skip( usbCode_start ) + usbCode_innerList + skip( code_end )
 usbCode_elem        = usbCode >> listElem
 usbCode_combo       = oneplus( ( usbCode_expanded | usbCode_elem ) + skip( maybe( plus ) ) ) >> listElem
 usbCode_sequence    = oneplus( ( usbCode_combo | seqString ) + skip( maybe( comma ) ) ) >> oneLayerFlatten
 
-  # Capabilities
+# Cons Codes
+consCode_start       = tokenType('ConsCodeStart')
+consCode_number      = number >> make_consCode_number
+consCode_range       = ( consCode_number | unString ) + skip( dash ) + ( number | unString ) >> make_consCode_range
+consCode_listElemTag = unString >> make_consCode
+consCode_listElem    = ( consCode_number | consCode_listElemTag ) >> listElem
+consCode_innerList   = oneplus( ( consCode_range | consCode_listElem ) + skip( maybe( comma ) ) ) >> flatten
+consCode_expanded    = skip( consCode_start ) + consCode_innerList + skip( code_end )
+consCode_elem        = consCode >> listElem
+
+# Sys Codes
+sysCode_start       = tokenType('SysCodeStart')
+sysCode_number      = number >> make_sysCode_number
+sysCode_range       = ( sysCode_number | unString ) + skip( dash ) + ( number | unString ) >> make_sysCode_range
+sysCode_listElemTag = unString >> make_sysCode
+sysCode_listElem    = ( sysCode_number | sysCode_listElemTag ) >> listElem
+sysCode_innerList   = oneplus( ( sysCode_range | sysCode_listElem ) + skip( maybe( comma ) ) ) >> flatten
+sysCode_expanded    = skip( sysCode_start ) + sysCode_innerList + skip( code_end )
+sysCode_elem        = sysCode >> listElem
+
+# HID Codes
+hidCode_elem        = usbCode_expanded | usbCode_elem | sysCode_expanded | sysCode_elem | consCode_expanded | consCode_elem
+
+# Capabilities
 capFunc_arguments = many( number + skip( maybe( comma ) ) ) >> listToTuple
 capFunc_elem      = name + skip( parenthesis('(') ) + capFunc_arguments + skip( parenthesis(')') ) >> capArgExpander >> listElem
-capFunc_combo     = oneplus( ( usbCode_expanded | usbCode_elem | capFunc_elem ) + skip( maybe( plus ) ) ) >> listElem
+capFunc_combo     = oneplus( ( hidCode_elem | capFunc_elem ) + skip( maybe( plus ) ) ) >> listElem
 capFunc_sequence  = oneplus( ( capFunc_combo | seqString ) + skip( maybe( comma ) ) ) >> oneLayerFlatten
 
-  # Trigger / Result Codes
+# Trigger / Result Codes
 triggerCode_outerList    = scanCode_sequence >> optionExpansion
-triggerUSBCode_outerList = usbCode_sequence >> optionExpansion >> usbCodeToCapability
-resultCode_outerList     = capFunc_sequence >> optionExpansion >> usbCodeToCapability
+triggerUSBCode_outerList = usbCode_sequence >> optionExpansion >> hidCodeToCapability
+resultCode_outerList     = ( ( capFunc_sequence >> optionExpansion ) | none ) >> hidCodeToCapability
 
 
- ## Main Rules
+## Main Rules
 
 #| <variable> = <variable contents>;
 variable_contents   = name | content | string | number | comma | dash | unseqString
@@ -525,7 +673,7 @@ capability_expression = name + skip( operator('=>') ) + name + skip( parenthesis
 define_expression = name + skip( operator('=>') ) + name + skip( eol ) >> set_define
 
 #| <trigger> : <result>;
-operatorTriggerResult = operator(':') | operator(':+') | operator(':-')
+operatorTriggerResult = operator(':') | operator(':+') | operator(':-') | operator('::')
 scanCode_expression   = triggerCode_outerList + operatorTriggerResult + resultCode_outerList + skip( eol ) >> map_scanCode
 usbCode_expression    = triggerUSBCode_outerList + operatorTriggerResult + resultCode_outerList + skip( eol ) >> map_usbCode
 
@@ -545,13 +693,17 @@ def parse( tokenSequence ):
 def processKLLFile( filename ):
 	with open( filename ) as file:
 		data = file.read()
-		tokenSequence = tokenize( data )
+		try:
+			tokenSequence = tokenize( data )
+		except LexerError as err:
+			print ( "{0} Tokenization error in '{1}' - {2}".format( ERROR, filename, err ) )
+			sys.exit( 1 )
 		#print ( pformat( tokenSequence ) ) # Display tokenization
 		try:
 			tree = parse( tokenSequence )
-		except NoParseError as e:
-			print("Error parsing %s. %s" % (filename, e.msg), file=sys.stderr)
-			sys.exit(1)
+		except (NoParseError, KeyError) as err:
+			print ( "{0} Parsing error in '{1}' - {2}".format( ERROR, filename, err ) )
+			sys.exit( 1 )
 
 
 ### Misc Utility Functions ###
@@ -617,9 +769,8 @@ if __name__ == '__main__':
 		for filename in partial:
 			variables_dict.setCurrentFile( filename )
 			processKLLFile( filename )
-
-		# Apply assignment cache, see 5.1.2 USB Codes for why this is necessary
-		macros_map.replayCachedAssignments()
+			# Apply assignment cache, see 5.1.2 USB Codes for why this is necessary
+			macros_map.replayCachedAssignments()
 		# Remove un-marked keys to complete the partial layer
 		macros_map.removeUnmarked()
 

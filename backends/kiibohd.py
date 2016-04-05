@@ -29,8 +29,9 @@ from datetime import date
 # Modifying Python Path, which is dumb, but the only way to import up one directory...
 sys.path.append( os.path.expanduser('..') )
 
-from kll_lib.containers import *
 from kll_lib.backends import *
+from kll_lib.containers import *
+from kll_lib.hid_dict   import *
 
 
 ### Classes ###
@@ -40,9 +41,16 @@ class Backend( BackendBase ):
 	templatePaths = ["templates/kiibohdKeymap.h", "templates/kiibohdDefs.h"]
 	outputPaths = ["generatedKeymap.h", "kll_defs.h"]
 
-	# USB Code Capability Name
-	def usbCodeCapability( self ):
-		return "usbKeyOut";
+	requiredCapabilities = {
+		'CONS' : 'consCtrlOut',
+		'NONE' : 'noneOut',
+		'SYS'  : 'sysCtrlOut',
+		'USB'  : 'usbKeyOut',
+	}
+
+	# Capability Lookup
+	def capabilityLookup( self, type ):
+		return self.requiredCapabilities[ type ];
 
 
 	# TODO
@@ -115,21 +123,26 @@ class Backend( BackendBase ):
 		# Iterate through defines and lookup the variables
 		for define in variables.defines.keys():
 			if define in variables.overallVariables.keys():
-				self.fill_dict['Defines'] += "\n#define {0} {1}".format( variables.defines[ define ], variables.overallVariables[ define ] )
+				self.fill_dict['Defines'] += "\n#define {0} {1}".format( variables.defines[ define ], variables.overallVariables[ define ].replace( '\n', ' \\\n' ) )
 			else:
 				print( "{0} '{1}' not defined...".format( WARNING, define ) )
 
 
 		## Capabilities ##
+		self.fill_dict['CapabilitiesFuncDecl'] = ""
 		self.fill_dict['CapabilitiesList'] = "const Capability CapabilitiesList[] = {\n"
+		self.fill_dict['CapabilitiesIndices'] = "typedef enum CapabilityIndex {\n"
 
 		# Keys are pre-sorted
 		for key in capabilities.keys():
 			funcName = capabilities.funcName( key )
 			argByteWidth = capabilities.totalArgBytes( key )
 			self.fill_dict['CapabilitiesList'] += "\t{{ {0}, {1} }},\n".format( funcName, argByteWidth )
+			self.fill_dict['CapabilitiesFuncDecl'] += "void {0}( uint8_t state, uint8_t stateType, uint8_t *args );\n".format( funcName )
+			self.fill_dict['CapabilitiesIndices'] += "\t{0}_index,\n".format( funcName )
 
 		self.fill_dict['CapabilitiesList'] += "};"
+		self.fill_dict['CapabilitiesIndices'] += "} CapabilityIndex;"
 
 
 		## Results Macros ##
@@ -146,7 +159,7 @@ class Backend( BackendBase ):
 				# Needed for USB behaviour, otherwise, repeated keys will not work
 				if sequence > 0:
 					# <single element>, <usbCodeSend capability>, <USB Code 0x00>
-					self.fill_dict['ResultMacros'] += "1, {0}, 0x00, ".format( capabilities.getIndex( self.usbCodeCapability() ) )
+					self.fill_dict['ResultMacros'] += "1, {0}, 0x00, ".format( capabilities.getIndex( self.capabilityLookup('USB') ) )
 
 				# For each combo in the sequence, add the length of the combo
 				self.fill_dict['ResultMacros'] += "{0}, ".format( len( macros.resultsIndexSorted[ result ][ sequence ] ) )
@@ -160,13 +173,34 @@ class Backend( BackendBase ):
 
 					# Add each of the arguments of the capability
 					for arg in range( 0, len( resultItem[1] ) ):
+						# Special cases
+						if isinstance( resultItem[1][ arg ], str ):
+							# If this is a CONSUMER_ element, needs to be split into 2 elements
+							# AC_ and AL_ are other sections of consumer control
+							if re.match( '^(CONSUMER|AC|AL)_', resultItem[1][ arg ] ):
+								tag = resultItem[1][ arg ].split( '_', 1 )[1]
+								if '_' in tag:
+									tag = tag.replace( '_', '' )
+								try:
+									lookupNum = kll_hid_lookup_dictionary['ConsCode'][ tag ][1]
+								except KeyError as err:
+									print ( "{0} {1} Consumer HID kll bug...please report.".format( ERROR, err ) )
+									raise
+								byteForm = lookupNum.to_bytes( 2, byteorder='little' ) # XXX Yes, little endian from how the uC structs work
+								self.fill_dict['ResultMacros'] += "{0}, {1}, ".format( *byteForm )
+								continue
+
+							# None, fall-through disable
+							elif resultItem[0] is self.capabilityLookup('NONE'):
+								continue
+
 						self.fill_dict['ResultMacros'] += "{0}, ".format( resultItem[1][ arg ] )
 
 			# If sequence is longer than 1, append a sequence spacer at the end of the sequence
 			# Required by USB to end at sequence without holding the key down
 			if len( macros.resultsIndexSorted[ result ] ) > 1:
 				# <single element>, <usbCodeSend capability>, <USB Code 0x00>
-				self.fill_dict['ResultMacros'] += "1, {0}, 0x00, ".format( capabilities.getIndex( self.usbCodeCapability() ) )
+				self.fill_dict['ResultMacros'] += "1, {0}, 0x00, ".format( capabilities.getIndex( self.capabilityLookup('USB') ) )
 
 			# Add list ending 0 and end of list
 			self.fill_dict['ResultMacros'] += "0 };\n"
@@ -195,13 +229,17 @@ class Backend( BackendBase ):
 
 			# Add the trigger macro scan code guide
 			# See kiibohd controller Macros/PartialMap/kll.h for exact formatting details
-			for sequence in range( 0, len( macros.triggersIndexSorted[ trigger ][ 0 ] ) ):
+			for sequence in range( 0, len( macros.triggersIndexSorted[ trigger ][0] ) ):
 				# For each combo in the sequence, add the length of the combo
 				self.fill_dict['TriggerMacros'] += "{0}, ".format( len( macros.triggersIndexSorted[ trigger ][0][ sequence ] ) )
 
 				# For each combo, add the key type, key state and scan code
-				for combo in range( 0, len( macros.triggersIndexSorted[ trigger ][ 0 ][ sequence ] ) ):
-					triggerItem = macros.triggersIndexSorted[ trigger ][ 0 ][ sequence ][ combo ]
+				for combo in range( 0, len( macros.triggersIndexSorted[ trigger ][0][ sequence ] ) ):
+					triggerItemId = macros.triggersIndexSorted[ trigger ][0][ sequence ][ combo ]
+
+					# Lookup triggerItem in ScanCodeStore
+					triggerItemObj = macros.scanCodeStore[ triggerItemId ]
+					triggerItem = triggerItemObj.offset( macros.interconnectOffset )
 
 					# TODO Add support for Analog keys
 					# TODO Add support for LED states
@@ -230,21 +268,32 @@ class Backend( BackendBase ):
 		self.fill_dict['MaxScanCode'] = "#define MaxScanCode 0x{0:X}".format( macros.overallMaxScanCode )
 
 
+		## Interconnect ScanCode Offset List ##
+		self.fill_dict['ScanCodeInterconnectOffsetList'] = "const uint8_t InterconnectOffsetList[] = {\n"
+		for offset in range( 0, len( macros.interconnectOffset ) ):
+			self.fill_dict['ScanCodeInterconnectOffsetList'] += "\t0x{0:02X},\n".format( macros.interconnectOffset[ offset ] )
+		self.fill_dict['ScanCodeInterconnectOffsetList'] += "};"
+
+
+		## Max Interconnect Nodes ##
+		self.fill_dict['InterconnectNodeMax'] = "#define InterconnectNodeMax 0x{0:X}\n".format( len( macros.interconnectOffset ) )
+
+
 		## Default Layer and Default Layer Scan Map ##
 		self.fill_dict['DefaultLayerTriggerList'] = ""
 		self.fill_dict['DefaultLayerScanMap'] = "const nat_ptr_t *default_scanMap[] = {\n"
 
 		# Iterate over triggerList and generate a C trigger array for the default map and default map array
-		for triggerList in range( macros.firstScanCode[ 0 ], len( macros.triggerList[ 0 ] ) ):
+		for triggerList in range( macros.firstScanCode[0], len( macros.triggerList[0] ) ):
 			# Generate ScanCode index and triggerList length
-			self.fill_dict['DefaultLayerTriggerList'] += "Define_TL( default, 0x{0:02X} ) = {{ {1}".format( triggerList, len( macros.triggerList[ 0 ][ triggerList ] ) )
+			self.fill_dict['DefaultLayerTriggerList'] += "Define_TL( default, 0x{0:02X} ) = {{ {1}".format( triggerList, len( macros.triggerList[0][ triggerList ] ) )
 
 			# Add scanCode trigger list to Default Layer Scan Map
 			self.fill_dict['DefaultLayerScanMap'] += "default_tl_0x{0:02X}, ".format( triggerList )
 
 			# Add each item of the trigger list
-			for trigger in macros.triggerList[ 0 ][ triggerList ]:
-				self.fill_dict['DefaultLayerTriggerList'] += ", {0}".format( trigger )
+			for triggerItem in macros.triggerList[0][ triggerList ]:
+				self.fill_dict['DefaultLayerTriggerList'] += ", {0}".format( triggerItem )
 
 			self.fill_dict['DefaultLayerTriggerList'] += " };\n"
 		self.fill_dict['DefaultLayerTriggerList'] = self.fill_dict['DefaultLayerTriggerList'][:-1] # Remove last newline

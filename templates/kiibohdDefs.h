@@ -17,8 +17,14 @@
 <|Information|>
 
 
-#ifndef __kll_defs_h
-#define __kll_defs_h
+#pragma once
+
+// ----- Enums -----
+
+// Capability Indices
+<|CapabilitiesIndices|>
+
+
 
 // ----- KLL Variables -----
 <|VariableInformation|>
@@ -26,9 +32,9 @@
 
 
 // ----- Defines -----
+
+// -- Interconnect Node Maximum --
+<|InterconnectNodeMax|>
+
 <|Defines|>
-
-
-
-#endif // __kll_defs_h
 

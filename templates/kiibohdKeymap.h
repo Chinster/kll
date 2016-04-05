@@ -17,8 +17,7 @@
 <|Information|>
 
 
-#ifndef __kiibohdKeymap_h
-#define __kiibohdKeymap_h
+#pragma once
 
 // ----- Includes -----
 
@@ -28,6 +27,10 @@
 
 
 // ----- Capabilities -----
+
+// Capability function declarations
+<|CapabilitiesFuncDecl|>
+
 
 // Indexed Capabilities Table
 <|CapabilitiesList|>
@@ -92,6 +95,13 @@
 <|PartialLayerTriggerLists|>
 
 
+// -- ScanCode Offset Map
+// Maps interconnect ids to scancode offsets
+//
+// Only used for keyboards with an interconnect
+<|ScanCodeInterconnectOffsetList|>
+
+
 // -- ScanCode Indexed Maps
 // Maps to a trigger list of macro pointers
 //                 _
@@ -125,8 +135,4 @@
 
 // - Layer State
 <|LayerState|>
-
-
-
-#endif // __generatedKeymap_h
 
