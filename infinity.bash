@@ -32,6 +32,7 @@ DefaultMap="md1Overlay stdFuncMap"
 PartialMaps[1]="xtra-keys"
 PartialMaps[2]="xtra-keys_stage2"
 PartialMaps[3]="xtra-keys_stage3"
+PartialMaps[6]="type-macro"
 PartialMaps[7]="lock"
 
 
