@@ -19,8 +19,9 @@ U"RGui" : U"Ctrl";
 
 # Layer buttons are combos.
 #S0x3C : U"Function2";
-U"Function1", U"RAlt": layerLock( 1 );
-U"Function1", U"Function4": layerLock( 7 );
+U"Function1", U"RAlt" : layerLock( 1 );
+U"Function1", U"Function3" : layerLatch( 6 );
+U"Function1"+ U"Function4" : layerLock( 7 );
 
 # Usable whenever timing gets implemented
 #U"Space"(300ms) : U"Space";
