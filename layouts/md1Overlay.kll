@@ -1,27 +1,18 @@
 Name = md1Overlay;
-Version = 0.2;
+Version = 0.3;
 Author = "Christopher Chin";
 KLL = 0.3;
 
 # Modified Date
-Date = 2016-April-05;
+Date = 2016-July-03;
 
-# Block ESC (0x29) when holding either Shift key. Enable ~.
-# Currently blocks shift all the time. Will need to work on that.
-#U["LShift", "RShift"] : blockHold( 0x29 );
-#U"Esc" : blockKey( 0x29 );
-#U["LShift", "RShift"] + U"Esc" : '~';
+S0x37 : U"Ctrl"; # Bottom left key
+S0x3B : U"Ctrl"; # Key to immediate right of space
+S0x3C : U"Function2";
 
-# Bottom left and key after space
-#S0x37 : U"Ctrl";
-U"Function2" : U"Ctrl";
-U"RGui" : U"Ctrl";
-
-# Layer buttons are combos.
-#S0x3C : U"Function2";
-U"Function1", U"RAlt" : layerLock( 1 );
-U"Function1", U"Function3" : layerLatch( 6 );
-U"Function1"+ U"Function4" : layerLock( 7 );
+# Layer buttons
+U"Function1", U"Function2" : layerLock( 1 );
+U"Function1", U"Function3" : layerLatch( 4 );
 
 # Usable whenever timing gets implemented
 #U"Space"(300ms) : U"Space";

@@ -1,9 +1,9 @@
-Name = normal-mouse;
-Version = 0.1;
+Name = xtra-keys_stage2;
+Version = 0.2;
 Author = "Christopher Chin";
 KLL = 0.3;
 
-Date = 2016-April-05;
+Date = 2016-July-04;
 
 # Layer 2
 # Remove this layer and base layer when pressing function key
@@ -17,11 +17,11 @@ U"Esc" : layerLock( 2 );
 U"5" : layerLock( 3 ) + layerLock( 2 );
 
 
-# WASD Mouse movements
-U"W" : mouseOut( 0, 0, -3 );
-U"S" : mouseOut( 0, 0, 3 );
-U"A" : mouseOut( 0, -3, 0 );
-U"D" : mouseOut( 0, 3, 0 );
+# IJKL Mouse movements
+U"I" : mouseOut( 0, 0, -3 );
+U"J" : mouseOut( 0, -3, 0 );
+U"K" : mouseOut( 0, 0, 3 );
+U"L" : mouseOut( 0, 3, 0 );
 
 # F keys
 U"1" : U"F5";

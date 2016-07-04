@@ -1,5 +1,5 @@
 Name = xtra-keys_stage3;
-Version = 0.1;
+Version = 0.2;
 Author = "Christopher Chin";
 KLL = 0.3;
 
@@ -10,14 +10,14 @@ Date = 2016-April-05;
 # I tried using the :+ operator. It did not work well.
 U"Function1" : layerLock( 3 ) + layerLock( 1 );
 
-# Return to stage2 remove this stage.
+# Return to stage2, remove this stage.
 U"Esc" : layerLock( 2 ) + layerLock( 3 );
 
-# WASD Mouse movements
-U"W" : mouseOut( 0, 0, -5 );
-U"S" : mouseOut( 0, 0, 5 );
-U"A" : mouseOut( 0, -5, 0 );
-U"D" : mouseOut( 0, 5, 0 );
+# IJKL Mouse movements
+U"I" : mouseOut( 0, 0, -5 );
+U"J" : mouseOut( 0, -5, 0 );
+U"K" : mouseOut( 0, 0, 5 );
+U"L" : mouseOut( 0, 5, 0 );
 
 # F keys
 U"1" : U"F9";
