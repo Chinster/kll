@@ -1,5 +1,5 @@
 Name = xtra-keys;
-Version = 0.3;
+Version = 0.4;
 Author = "Christopher Chin";
 KLL = 0.3;
 
@@ -17,20 +17,19 @@ U"3" : U"F3";
 U"4" : U"F4";
 
 # WASD Mouse movements
-U"W" : U"Up";
-U"A" : U"Left";
-U"S" : U"Down";
-U"D" : U"Right";
+U"W" : mouseOut( 0, 0, -1 );
+U"A" : mouseOut( 0, -1, 0 );
+U"S" : mouseOut( 0, 0, 1 );
+U"D" : mouseOut( 0, 1, 0 );
+U"Q" : mouseOut( 1, 0, 0 ); # Left click
+U"e" : mouseOut( 2, 0, 0 ); # Right click
+U"2" : mouseOut( 3, 0, 0 ); # Middle click
 
-# IJKL mouse controls
-U"I" : mouseOut( 0, 0, -1 );
-U"J" : mouseOut( 0, -1, 0 );
-U"K" : mouseOut( 0, 0, 1 );
-U"L" : mouseOut( 0, 1, 0 );
-U"U" : mouseOut( 1, 0, 0 ); # Left click
-U"O" : mouseOut( 2, 0, 0 ); # Right click
-U"8" : mouseOut( 3, 0, 0 ); # Middle click
-
+# HJKL arrow keys.
+U"H" : U"Left";
+U"J" : U"Down";
+U"K" : U"Up";
+U"L" : U"Right";
 
 # Moving up a layer modifies the F keys to output F5-F8 and increases mouse speed
 U"5" : layerLock( 2 );

@@ -13,7 +13,8 @@ S0x3C : U"Function2";
 # Layer buttons
 U"Function1", U"Function2" : layerLock( 1 );
 U"Function1", U"Function3" : layerLatch( 4 );
+U"Function1", U"Function4" : layerLatch( 4 );
 
-# Usable whenever timing gets implemented
+# Usable whenever timing gets implemented. See spec.
 #U"Space"(300ms) : U"Space";
-#U"Space"(H:301ms) : U"Ctrl";
+#U"Space"(P:301ms) : U"Ctrl";

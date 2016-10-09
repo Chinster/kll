@@ -17,11 +17,11 @@ U"Esc" : layerLock( 2 );
 U"5" : layerLock( 3 ) + layerLock( 2 );
 
 
-# IJKL Mouse movements
-U"I" : mouseOut( 0, 0, -3 );
-U"J" : mouseOut( 0, -3, 0 );
-U"K" : mouseOut( 0, 0, 3 );
-U"L" : mouseOut( 0, 3, 0 );
+# WASD Mouse movements
+U"W" : mouseOut( 0, 0, -3 );
+U"A" : mouseOut( 0, -3, 0 );
+U"S" : mouseOut( 0, 0, 3 );
+U"D" : mouseOut( 0, 3, 0 );
 
 # F keys
 U"1" : U"F5";

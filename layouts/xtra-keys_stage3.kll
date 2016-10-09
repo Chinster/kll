@@ -14,10 +14,10 @@ U"Function1" : layerLock( 3 ) + layerLock( 1 );
 U"Esc" : layerLock( 2 ) + layerLock( 3 );
 
 # IJKL Mouse movements
-U"I" : mouseOut( 0, 0, -5 );
-U"J" : mouseOut( 0, -5, 0 );
-U"K" : mouseOut( 0, 0, 5 );
-U"L" : mouseOut( 0, 5, 0 );
+U"W" : mouseOut( 0, 0, -5 );
+U"A" : mouseOut( 0, -5, 0 );
+U"S" : mouseOut( 0, 0, 5 );
+U"D" : mouseOut( 0, 5, 0 );
 
 # F keys
 U"1" : U"F9";
